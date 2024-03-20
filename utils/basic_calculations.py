@@ -28,5 +28,24 @@ def annual_to_monthly_IR(interest_rate):
     return round(monthly_IR,6)
 
     
- 
+def calculate_emi_amount(principal, interest_rate, loan_tenure):
+  """
+  Calculates the EMI (Equated Monthly Installment) for a loan.
+
+  Args:
+      principal: The principal loan amount (float).
+      interest_rate: The annual interest rate (float).
+      loan_tenure: The loan tenure in months (int).
+
+  Returns:
+      The EMI amount (float).
+  """
+  # Convert annual interest rate to monthly interest rate
+  monthly_interest_rate = annual_to_monthly_IR(interest_rate)
+  # Calculate the EMI
+  emi = (principal * monthly_interest_rate * ((1 + monthly_interest_rate) ** loan_tenure)) / (((1 + monthly_interest_rate) ** loan_tenure) - 1)
+  return emi
     
+
+def calculate_closing_balance(opening_balance, principal_amount):
+    return round(opening_balance - principal_amount, 2)    
