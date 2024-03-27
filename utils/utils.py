@@ -1,7 +1,7 @@
 import pandas as pd 
 import numpy as np 
-from utils.basic_calculations import *
-from datetime import datetime
+from utils.basic import * 
+from datetime import datetime,timedelta
 from utils.getinfo import *
 
 
@@ -26,18 +26,17 @@ def create_repayment_schedule_table(principal, monthly_IR, emi):
     rows = []
     
     # Append first row manually
-    rows.append({'MONTHS': 0, 'Opening': 0, 'Installment Amount': -round(principal, 2), 'Principal Amount': -round(principal, 2), 'Interest Amount': 0, 'Closing Balance': round(principal, 2)})
+    rows.append({'Opening Balance': 0, 'Installment Amount': -round(principal, 2), 'Principal Amount': -round(principal, 2), 'Interest Amount': 0, 'Closing Balance': round(principal, 2)})
     
     # Loop until CLBAL is less than 10
     while rows[-1]['Closing Balance'] >= 10:
         # Calculate values for the next row
-        interest_amount = round(rows[-1]['CLBAL'] * monthly_IR, 2)
-        principal_amount = round(emi - revenue, 2)
-        closing_balance = round(rows[-1]['CLBAL'] - capital, 2)
+        interest_amount = round(rows[-1]['Closing Balance'] * monthly_IR, 2)
+        principal_amount = round(emi - interest_amount, 2)
+        closing_balance = round(rows[-1]['Closing Balance'] - principal_amount, 2)
 
         # Append row to list of rows
-        rows.append({'MONTHS': rows[-1]['MONTHS'],
-                     'Opening Balance': rows[-1]['CLBAL'],
+        rows.append({'Opening Balance': rows[-1]['Closing Balance'],
                      'Installment Amount': round(emi, 2),
                      'Principal Amount': principal_amount,
                      'Interest Amount': interest_amount,
@@ -49,10 +48,11 @@ def create_repayment_schedule_table(principal, monthly_IR, emi):
     return df  
 
 
-def repayment_schedule_difference(df1,df2):
-    difference=abs(df1['Closing Balance']-df2['Closing Balance'])
-    difference_sum=np.sum(difference)
-    return difference,difference_sum
+def repayment_schedule_difference(actual_df, calculated_df):
+    difference = abs(actual_df['Closing Balance'] - calculated_df['Closing Balance'])
+    difference_sum = np.sum(difference)
+    return difference, difference_sum
+
 
 
 
@@ -127,7 +127,7 @@ def create_repayment_schedule_with_crr(dataframe):
             rows.append({
                 'Installment Date': row['Installment Date'],
                 'Transaction Type': row['Transaction Type'],
-                'Opening Balance': round(opening_balance,0),
+                'Opening Balance': round(opening_balance, 0),
                 'Principal Amount': row['Principal Amount'],
                 'Interest Amount': 0,
                 'Installment Amount': 0,
@@ -142,17 +142,26 @@ def create_repayment_schedule_with_crr(dataframe):
                 previous_row_was_crr, 
                 crr_info
             )
+            
+            # Calculate one-day interest for the opening balance
+            one_day_interest = opening_balance * monthly_IR / days_in_month
+            
+            # Calculate the difference between calculated and provided closing balance
+            closing_balance_difference = closing_balance - row['Closing Balance']
+            
+            # Adjust the final closing balance if the difference is less than one-day interest
+            if closing_balance_difference < one_day_interest:
+                closing_balance -= closing_balance_difference
+            
             previous_row_was_crr = False  # Reset after processing a non-CRR row
             rows.append({
                 'Installment Date': row['Installment Date'],
                 'Transaction Type': row['Transaction Type'],
-                'Opening Balance': round(opening_balance,0),
+                'Opening Balance': round(opening_balance, 0),
                 'Principal Amount': principal_amount,
                 'Interest Amount': interest_amount,
                 'Installment Amount': row['Installment Amount'],
                 'Closing Balance': closing_balance
             })
-            
-            
 
     return pd.DataFrame(rows)
