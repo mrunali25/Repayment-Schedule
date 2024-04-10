@@ -1,8 +1,9 @@
 import pandas as pd 
 import numpy as np 
-from utils.basic import * 
+from .basic import * 
 from datetime import datetime,timedelta
-from utils.getinfo import *
+from .getinfo import *
+
 
 
 def calculate_CRR_interest(closing_balance, extra_payment, interest_rate, days_in_month, last_emi_date, payment_date):
@@ -46,38 +47,6 @@ def create_repayment_schedule_table(principal, monthly_IR, emi):
     df = pd.DataFrame(rows)
     
     return df  
-
-
-def repayment_schedule_difference(actual_df, calculated_df):
-    difference = abs(actual_df['Closing Balance'] - calculated_df['Closing Balance'])
-    difference_sum = np.sum(difference)
-    return difference, difference_sum
-
-
-
-
-def check_interest_rate_consistency(file_path):
-    # Read the Excel file
-    df = pd.read_excel(file_path)
-
-    # Calculate the interest rate starting from the second row to skip the first row
-    df['Calculated_Monthly_IR'] = (df['Interest Amount'] / df['Opening Balance']).round(6)
-    calculated_IRs = df['Calculated_Monthly_IR'].iloc[1:]  # Skipping the first row
-
-    # Check if all calculated monthly interest rates from the second row onwards are the same
-    if calculated_IRs.nunique() == 1:
-        # Interest rate is consistent
-        return True, "Interest rate is the same throughout rows."
-    else:
-        # Since all rates should be the same, checking for actual inconsistency
-        # Find the first row index where the difference occurs, considering the skipped row
-        first_diff_index = calculated_IRs.diff().ne(0).idxmax()  # Finding first non-zero diff
-        if first_diff_index is not pd.NaT:
-            # If an actual difference is found, report the row number
-            return False, f"Interest rate is not consistent. Check row {first_diff_index + 1} for the first discrepancy."
-        else:
-            # If no actual difference found, report as consistent
-            return True, "Interest rate is the same throughout after skipping the first row."
 
 def calculate_interest_after_crr(opening_balance_before_crr, opening_balance_after_crr, monthly_IR, days_before_crr, days_in_month):
     interest_before_crr = (opening_balance_before_crr * monthly_IR * (days_before_crr / days_in_month))
