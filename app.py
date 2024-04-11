@@ -25,6 +25,8 @@ def main():
         if schedule_type == 'Normal Repayment Schedule':
             # Read uploaded file into DataFrame
             actual_df = pd.read_excel(uploaded_file)
+            monthly_IR, annual_IR = IR_from_repayment_schedule(actual_df)
+            principle, emi = principal_emi_from_repayment_schedule(actual_df)
             OPBAL = st.selectbox('Opening Balance', actual_df.columns)
             CLBAL= st.selectbox('Closing Balance', actual_df.columns)
             Installment=st.selectbox('Installment Amount', actual_df.columns)
